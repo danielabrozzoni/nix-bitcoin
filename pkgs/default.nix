@@ -12,6 +12,8 @@
   nixops19_09 = pkgs.callPackage ./nixops { };
   netns-exec = pkgs.callPackage ./netns-exec { };
   lightning-loop = pkgs.callPackage ./lightning-loop { };
+  btcpayserver = pkgs.callPackage ./btcpayserver { };
+  nbxplorer = pkgs.callPackage ./nbxplorer { };
 
   pinned = import ./pinned.nix;
 
