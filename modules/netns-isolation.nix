@@ -232,6 +232,16 @@ in {
         id = 22;
         connections = [ "lnd" ];
       };
+      nbxplorer = {
+        id = 23;
+        connections = [ "bitcoind" ];
+      };
+      btcpayserver = {
+        id = 24;
+        connections = [ "nbxplorer" ]
+        # communicates with clightning over lightning-rpc socket
+        ++ (optionals (config.services.btcpayserver.lightning-node == "lnd") [ "lnd" ]);
+      };
     };
 
     services.bitcoind = {
@@ -301,6 +311,14 @@ in {
     };
 
     services.lightning-loop.cliExec = mkCliExec "lightning-loop";
+
+    services.nbxplorer = mkIf config.services.btcpayserver.enable {
+      btcrpcurl = "http://${netns.bitcoind.address}:8332";
+      btcnodeendpoint = "${netns.bitcoind.address}:8333";
+      bind = netns.nbxplorer.address;
+    };
+    services.btcpayserver.bind = netns.btcpayserver.address;
+
   }
   ]);
 }
