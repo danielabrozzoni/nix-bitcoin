@@ -81,6 +81,13 @@ def run_tests(extra_tests):
         log_has_string("lightning-loop", "chain notifier RPC isstill in the process of starting")
     )
 
+    assert_running("nbxplorer")
+    machine.wait_until_succeeds(log_has_string("nbxplorer", "BTC: RPC connection successful"))
+    extra_tests.pop("nbxplorer")()
+    assert_running("btcpayserver")
+    machine.wait_until_succeeds(log_has_string("btcpayserver", "Listening on"))
+    extra_tests.pop("btcpayserver")()
+
     assert_running("spark-wallet")
     extra_tests.pop("spark-wallet")()
 

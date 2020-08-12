@@ -10,12 +10,28 @@ nanopos_ip = "169.254.1.19"
 recurringdonations_ip = "169.254.1.20"
 nginx_ip = "169.254.1.21"
 lightningloop_ip = "169.254.1.22"
+nbxplorer_ip = "169.254.1.23"
+btcpayserver_ip = "169.254.1.24"
 
 
 def electrs():
     machine.wait_until_succeeds(
         "ip netns exec nb-electrs nc -z localhost 4224"
     )  # prometeus metrics provider
+
+
+def nbxplorer():
+    machine.wait_until_succeeds("ip netns exec nb-nbxplorer nc -z %s 24444" % nbxplorer_ip)
+
+
+def btcpayserver():
+    machine.wait_until_succeeds("ip netns exec nb-btcpayserver nc -z %s 23000" % btcpayserver_ip)
+    # test lnd custom macaroon
+    assert_matches(
+        'ip netns exec nb-btcpayserver sudo -u btcpayserver curl -s --cacert /secrets/lnd-cert --header "Grpc-Metadata-macaroon: $(xxd -ps -u -c 1000 /run/lnd/btcpayserver.macaroon)" -X GET https://%s:8080/v1/getinfo | jq'
+        % lnd_ip,
+        '"version"',
+    )
 
 
 def spark_wallet():
@@ -94,6 +110,8 @@ def prestop():
 
 extra_tests = {
     "electrs": electrs,
+    "nbxplorer": nbxplorer,
+    "btcpayserver": btcpayserver,
     "spark-wallet": spark_wallet,
     "lightning-charge": lightning_charge,
     "nanopos": nanopos,
