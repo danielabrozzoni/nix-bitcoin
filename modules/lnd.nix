@@ -97,6 +97,32 @@ in {
       default = false;
       description = "Announce LND Tor Hidden Service";
     };
+    macaroon = mkOption {
+      default = {};
+      type = with types; loaOf (submodule ({ name, ...}: {
+        options = {
+          name = mkOption {
+            type = types.str;
+            example = "invoice+readonly";
+            description = ''
+              A descriptive name for the macaroon.
+            '';
+          };
+          permissions = mkOption {
+            type = types.str;
+            example = ''
+              {"entity":"info","action":"read"},{"entity":"onchain","action":"read"},{"entity":"offchain","action":"read"},{"entity":"address","action":"read"},{"entity":"message","action":"read"},{"entity":"peers","action":"read"},{"entity":"signer","action":"read"},{"entity":"invoices","action":"read"},{"entity":"invoices","action":"write"},{"entity":"address","action":"write"}
+            '';
+            description = ''
+              List of granted macaroon permissions.
+            '';
+          };
+        };
+      }));
+      description = ''
+        Custom macaroon configuration.
+      '';
+    };
     extraConfig = mkOption {
       type = types.lines;
       default = "";
@@ -155,6 +181,8 @@ in {
         ${optionalString cfg.announce-tor "echo externalip=$(cat /var/lib/onion-chef/lnd/lnd) >> '${cfg.dataDir}/lnd.conf'"}
       '';
       serviceConfig = nix-bitcoin-services.defaultHardening // {
+        RuntimeDirectory = "lnd";
+        RuntimeDirectoryMode = "710";
         ExecStart = "${cfg.package}/bin/lnd --configfile=${cfg.dataDir}/lnd.conf";
         User = "lnd";
         Restart = "on-failure";
@@ -214,6 +242,24 @@ in {
             while ! { exec 3>/dev/tcp/127.0.0.1/${toString cfg.rpcPort}; } &>/dev/null; do
               sleep 0.1
             done
+
+            runtimedirectory=/run/lnd
+            ${lib.concatMapStrings
+            (macaroon: ''
+                echo "Create custom macaroons"
+                touch "$runtimedirectory/${macaroon.name}.macaroon"
+                chown lnd: "$runtimedirectory/${macaroon.name}.macaroon"
+                chmod 640 "$runtimedirectory/${macaroon.name}.macaroon"
+                ${pkgs.curl}/bin/curl -s \
+                  -H "Grpc-Metadata-macaroon: $(${pkgs.xxd}/bin/xxd -ps -u -c 99999 '${mainnetDir}/admin.macaroon')" \
+                  --cacert ${secretsDir}/lnd-cert \
+                  -X POST \
+                  -d '{"permissions":[${macaroon.permissions}]}' \
+                  https://127.0.0.1:${restPort}/v1/macaroon |\
+                  ${pkgs.jq}/bin/jq -c '.macaroon' | ${pkgs.xxd}/bin/xxd -p -r > "$runtimedirectory/${macaroon.name}.macaroon"
+              '')
+              (attrValues cfg.macaroon)
+            }
           ''}"
         ];
       } // (if cfg.enforceTor
