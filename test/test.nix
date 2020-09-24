@@ -19,6 +19,8 @@ import ./make-test.nix rec {
       # hardened
     ];
 
+    virtualisation.diskSize = 1024;
+
     nix-bitcoin.netns-isolation.enable = (scenario == "withnetns");
 
     services.bitcoind.extraConfig = mkForce "connect=0";
