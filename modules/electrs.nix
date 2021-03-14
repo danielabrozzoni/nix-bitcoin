@@ -89,7 +89,7 @@ in {
             else
               "--jsonrpc-import --index-batch-size=10"
           } \
-          --network=${bitcoind.makeNetworkName "bitcoin" "regtest"} \
+          --network=${bitcoind.makeNetworkName "bitcoin" "TODO" "regtest"} \
           --db-dir='${cfg.dataDir}' \
           --daemon-dir='${bitcoind.dataDir}' \
           --electrum-rpc-addr=${cfg.address}:${toString cfg.port} \

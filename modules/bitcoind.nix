@@ -13,6 +13,10 @@ let
 
     startupnotify=/run/current-system/systemd/bin/systemd-notify --ready
 
+    ${optionalString cfg.testnet ''
+      testnet=1
+      [test]
+    ''}
     ${optionalString cfg.regtest ''
       regtest=1
       [regtest]
@@ -178,6 +182,11 @@ in {
           '';
         };
       };
+      testnet = mkOption {
+        type = types.bool;
+        default = false;
+        description = "Enable testnet mode.";
+      };
       regtest = mkOption {
         type = types.bool;
         default = false;
@@ -185,11 +194,11 @@ in {
       };
       network = mkOption {
         readOnly = true;
-        default = if cfg.regtest then "regtest" else "mainnet";
+        default = if cfg.regtest then "regtest" else if cfg.testnet then "testnet" else "mainnet";
       };
       makeNetworkName = mkOption {
         readOnly = true;
-        default = mainnet: regtest: if cfg.regtest then regtest else mainnet;
+        default = mainnet: testnet: regtest: if cfg.regtest then regtest else if cfg.testnet then testnet else mainnet;
       };
       proxy = mkOption {
         type = types.nullOr types.str;
@@ -346,7 +355,7 @@ in {
       '';
       # Enable RPC access for group
       postStart = ''
-        chmod g=r '${cfg.dataDir}/${optionalString cfg.regtest "regtest/"}.cookie'
+        chmod g=r '${cfg.dataDir}/${cfg.makeNetworkName "" "testnet3/" "regtest/"}.cookie'
       '';
       serviceConfig = nbLib.defaultHardening // {
         Type = "notify";

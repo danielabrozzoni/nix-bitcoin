@@ -165,7 +165,7 @@ in {
         port=${toString cfg.btcpayserver.port}
         socksendpoint=${cfg.tor.client.socksListenAddress}
         btcexplorerurl=http://${cfg.nbxplorer.address}:${toString cfg.nbxplorer.port}/
-        btcexplorercookiefile=${cfg.nbxplorer.dataDir}/${config.services.bitcoind.makeNetworkName "Main" "RegTest"}/.cookie
+        btcexplorercookiefile=${cfg.nbxplorer.dataDir}/${config.services.bitcoind.makeNetworkName "Main" "TODO" "RegTest"}/.cookie
         postgres=User ID=${cfg.btcpayserver.user};Host=/run/postgresql;Database=btcpaydb
         ${optionalString (cfg.btcpayserver.rootpath != null) "rootpath=${cfg.btcpayserver.rootpath}"}
       '' + optionalString (cfg.btcpayserver.lightningBackend == "clightning") ''
